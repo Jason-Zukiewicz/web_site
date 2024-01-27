@@ -1,17 +1,44 @@
-To Run Site:
-A. Frontend:
-B. Backend
-    - From top folder run commands
-    - "make setup_back" to create the database and initialize
-    - "make run_back" to start the server
+# Project Name
 
+## To Run the Site
 
-TODO:
-1. Account
- - Signup
- - Login
- - Cookies
+### A. Frontend:
 
-2. Tweet Creation
+<!-- Include instructions for running the frontend part of your site, if applicable. -->
 
-3. Tweet Display
+### B. Backend:
+
+1. Navigate to the top folder of the project.
+
+2. Run the following commands in your terminal:
+
+   - To set up the backend and create the database:
+     ```
+     make setup_back
+     ```
+
+   - To start the server:
+     ```
+     make run_back
+     ```
+
+## TODO:
+
+### 1. Account Features:
+
+- **Signup:**
+  <!-- Describe how users can sign up for an account. -->
+
+- **Login:**
+  <!-- Explain the login process. -->
+
+- **Cookies:**
+  <!-- If your project involves cookie-based authentication, mention it here. -->
+
+### 2. Tweet Creation:
+
+<!-- Provide details on how users can create tweets within your application. -->
+
+### 3. Tweet Display:
+
+<!-- Describe how the tweets are displayed or any specific features related to tweet display. -->
