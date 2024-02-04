@@ -1,15 +1,25 @@
-from flask import Flask, request, jsonify
+# region -- [IMPORTS] --------------------------------------------------------------------------------------------------
+from flask import Flask, request, jsonify, session, url_for, redirect, g, render_template_string
 from flask_cors import CORS
 from werkzeug.exceptions import abort
 from sqlalchemy import and_
 import os
 from datetime import datetime
 from models import db, User, Tweet
+from functools import wraps
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:3000"])
 
-# -------------------------------------------------------- [ DataBase ] -----------------------------------------------#
+def handle_preflight():
+    response = jsonify()
+    response.headers.add('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+    return response
+CORS(app, resources={r"/*": {"origins": "http://localhost:3000"}}, supports_credentials=True)
+
+# endregion -- [IMPORTS]
+
+# region -- [DataBase] --------------------------------------------------------------------------------------------------
 SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(app.root_path, 'database.db')
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 SECRET_KEY = 'dev key'
@@ -31,27 +41,69 @@ def initdb_command():
     db.session.commit()
 
     print('Initialized the database.')
+# endregion -- [DataBase]
 
-# -------------------------------------------------------- [ Router ] -----------------------------------------------#
-@app.route("/login/", methods=["POST"])
-def login_post():
+# region -- [Router]  --------------------------------------------------------------------------------------------------
+@app.route("/", methods=["GET"])
+def index():
+    title = "Welcome to My Flask App"
+    content = "This is some content for the homepage."
+
+    # HTML string without a separate template file
+    html_content = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Our Website</title>
+    </head>
+    <body>
+    
+        <h1>This is the home page</h1>
+        <p>Content will go here</p>
+    </body>
+    </html>
+    """
+
+    # Render the HTML string
+    return render_template_string(html_content, title=title, content=content)
+
+@app.route('/login/', methods=['POST', 'OPTIONS'])
+def login():
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+    
+    # Parse request 
     req_data = request.get_json()
     if "username" not in req_data:
         return jsonify({"error": "Username is missing"}), 400
-    if "password1" not in req_data:
-        return jsonify({"error": "Password1 is missing"}), 400
-    
+    if "password" not in req_data:
+        return jsonify({"error": "Password is missing"}), 400
     username = req_data["username"]
     password = req_data["password"]
     
+    # Check values
     user = User.query.filter_by(username=username).first()
     if user is None or user.password != password:
         return jsonify({"error": "Invalid username or password"}), 401 
     
-    return jsonify({"status": "Login in successfully"}), 201
-        
-@app.route("/signup/", methods=["POST"])
-def signup_post():
+    # Set Cookies and return
+    session['user_id'] = user.id
+    return jsonify({"message": "Login in successfully"}), 201
+ 
+@app.route("/logout/")
+def logout():
+    session.pop('user_id', None)
+    return redirect(url_for('login'))
+
+@app.route("/signup/", methods=['POST', 'OPTIONS'])
+def signup():
+    if request.method == 'OPTIONS':
+        return handle_preflight()
+    
+    print("INSIDE SIGNUP")
+    # Parse request 
     req_data = request.get_json()
     if "username" not in req_data:
         return jsonify({"error": "Username is missing"}), 400
@@ -59,20 +111,24 @@ def signup_post():
         return jsonify({"error": "Password1 is missing"}), 400
     if "password2" not in req_data:
         return jsonify({"error": "Password2 is missing"}), 400
-
     username = req_data["username"]
     password1 = req_data["password1"]
     password2 = req_data["password2"]
 
+    # Check values
     if password1 != password2:
         return jsonify({"error": "Passwords don't match"}), 400 
     if is_valid_username(username) or not is_valid_password(password1):
         return jsonify({"error": "Invalid username or password"}), 401
-    
+
+    # Add to DB
     new_user = User(username=username, password=password1)
     db.session.add(new_user)
     db.session.commit()
-    return jsonify({"status": "User created successfully"}), 201
+    
+    # Set Cookies and return
+    session['user_id'] = new_user.id
+    return jsonify({"message": "User created successfully"}), 201
     
 @app.route("/tweet/", methods=["POST"])
 def tweet_post():
@@ -125,9 +181,11 @@ def user_tweets_get(username=None):
     
     userID = userID_from_username(username)
     return tweet_get_all_by_user(userID)
-    
-# -------------------------------------------- [ UTIL ] ------------------------------------------------- #
 
+
+# endregion -- [Router]
+
+# region -- [UTIL]  --------------------------------------------------------------------------------------------------
 def userID_from_username(username):
     user = User.query.filter_by(username=username).first()
     if not user:
@@ -167,6 +225,37 @@ def tweet_get_all_by_user(authorID):
         for tweet in tweets
     ])
 
-# -------------------------------------------- [ OLD ] ------------------------------------------------- #
+
+# endregion -- [UTIL] 
+
+# region -- [ Cookies ]  --------------------------------------------------------------------------------------------------
+
+# authentication,
+# session management
+# sensitive information
+@app.before_request
+def before_request():
+    g.user = None
+    if 'user.if' in session:
+        user = User.query.get([session['user_id']])
+        if user:
+            g.user = user
+
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(**kwargs):
+        if g.user is None:
+            return redirect(url_for('login'))
+        return view(**kwargs)
+    return wrapped_view            
+
+@app.route("/protected/")
+@login_required
+def protected():
+    return "This is a protected route." 
+# endregion -- [ Cookies ] 
+
+# region -- [ MAIN ]  --------------------------------------------------------------------------------------------------
 if __name__ == "__main__":
-	app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=True)
+# endregion -- [ MAIN ] 
