@@ -12,8 +12,8 @@ RUN apt-get update && \
     apt-get install -y python3-dev build-essential
 
 # Create and activate a virtual environment
-RUN python3 -m venv venv
-ENV PATH="/app/venv/bin:$PATH"
+RUN python3 -m venv docker-venv
+ENV PATH="/app/docker-venv/bin:$PATH"
 
 # Install Python dependencies from requirements.txt within the virtual environment
 RUN pip install --no-cache-dir -r requirements.txt

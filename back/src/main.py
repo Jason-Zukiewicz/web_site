@@ -90,7 +90,7 @@ def login():
     
     # Set Cookies and return
     session['user_id'] = user.id
-    return jsonify({"message": "Login in successfully"}), 201
+    return jsonify({"message": "Login in successfully", "userId": user.id, "userName": user.username}), 201
  
 @app.route("/logout/")
 def logout():
@@ -165,8 +165,8 @@ def tweet_post():
 def tweet_get_by_id(tweetID=None):
     tweet = Tweet.query.filter_by(id=tweetID).first()
     if tweet is None:
-        return jsonify({"error": "Tweet ID is invalid"}), 400 
-    
+        return jsonify({"message": "Tweet not found"}), 200  # Return a success response with a message
+
     return jsonify({
         "id": tweet.id,
         "authorID": tweet.authorID,
@@ -174,13 +174,14 @@ def tweet_get_by_id(tweetID=None):
         "msg": tweet.msg
     })
     
-@app.route("/<username>/", methods=["GET"])
-def user_tweets_get(username=None):
-    if not is_valid_username(username):
-        return jsonify({"error": "Username is invalid"}), 400 
+
+
+@app.route("/tweets/<userId>/", methods=["GET"])
+def user_tweets_get(userId=None):
+    if not is_valid_userId(userId):
+        return jsonify({"error": "userId is invalid"}), 400 
     
-    userID = userID_from_username(username)
-    return tweet_get_all_by_user(userID)
+    return tweet_get_all_by_user(userId)
 
 
 # endregion -- [Router]
@@ -191,6 +192,11 @@ def userID_from_username(username):
     if not user:
         return -1
     return user.id
+
+def is_valid_userId(userId):
+	if User.query.filter_by(id=userId).first() is None:
+		return False
+	return True
 
 def is_valid_username(username):
 	if User.query.filter_by(username=username).first() is None:
@@ -212,7 +218,7 @@ def tweet_get_all_by_user(authorID):
     tweets = Tweet.query.filter_by(authorID=authorID).all()
     
     if not tweets:
-        return jsonify({"error": "No tweets found for the specified authorID"}), 404
+        return jsonify({"error": "No tweets found for the specified authorID"}), 400
 
     # Return a list of tweets as JSON
     return jsonify([

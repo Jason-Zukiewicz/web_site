@@ -71,3 +71,26 @@ export const deleter = (resource, data, getter) => {
 			console.log("Error POSTing to ", target, ": ", err);
 		});
 }
+
+export const getCookie = (name) => {
+	const cookies = document.cookie.split('; ');
+	for (const cookie of cookies) {
+		const [cookieName, cookieValue] = cookie.split('=');
+		if (cookieName === name) {
+			return decodeURIComponent(cookieValue);
+		}
+	}
+	return null;
+};
+
+export const setCookie = (name, value, daysToExpire) => {
+	const expirationDate = new Date();
+	expirationDate.setDate(expirationDate.getDate() + daysToExpire);
+	const cookieString = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; expires=${expirationDate.toUTCString()}; path=/`;
+	console.log(`Setting cookie: ${name}=${value}, Expires: ${expirationDate.toUTCString()}`);
+	document.cookie = cookieString;
+};
+
+export const deleteCookie = (name) => {
+	setCookie(name, '', -1); // Set expiration date to a past date
+};

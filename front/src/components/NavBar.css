@@ -1,0 +1,36 @@
+/* src/components/NavBar.css */
+.navbar {
+    background-color: #333;
+    /* Set background color of the navbar */
+    padding: 10px;
+    /* Add padding for better appearance */
+}
+
+.nav-list {
+    list-style-type: none;
+    /* Remove bullet points from the list */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    /* Display list items horizontally */
+}
+
+.nav-item {
+    margin-right: 10px;
+    /* Add margin between navbar items */
+}
+
+.nav-link {
+    text-decoration: none;
+    color: black;
+    padding: 8px 12px;
+    border: 1px solid black;
+    border-radius: 5px;
+}
+
+.nav-link:hover {
+    background-color: black;
+
+    color: #ffffff;
+
+}
